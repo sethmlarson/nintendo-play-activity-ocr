@@ -20,18 +20,17 @@ that can be queried:
 
 ```sql
 SELECT game_name, SUM(duration) AS d FROM sessions
-WHERE STRFTIME('%Y', date) = '2025'
+WHERE STRFTIME('%Y', date) = '2025' AND game_system = 'Switch'
 GROUP BY game_name ORDER BY d DESC;
 ```
 
-| Game Name                           | Duration |
-|-------------------------------------|----------|
-| Pikmin 2                            | 97869    |
-| Animal Crossing                     | 60464    |
-| Mario Kart World                    | 37500    |
-| Kirby Air Riders                    | 24000    |
-| Super Mario Odyssey                 | 17100    |
-| Pikmin 4                            | 3900     |
+| Game Name           | Duration |
+|---------------------|----------|
+| Mario Kart World    | 37500    |
+| Kirby Air Riders    | 24000    |
+| Super Mario Odyssey | 17100    |
+| Pikmin 2            | 8400     |
+| Pikmin 4            | 3900     |
 
 ## License
 

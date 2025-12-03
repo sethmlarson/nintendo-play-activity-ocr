@@ -4,12 +4,15 @@
 
 import json
 import os
+import sys
 import hashlib
 import easyocr
 
-# Load metadata about which images have been processed.
-with open("/images/meta.json") as f:
-    meta = json.loads(f.read())
+# Determine which checksums to skip, if any.
+if "--skip-checksums" in sys.argv:
+    skip_checksums = sys.argv[sys.argv.index("--skip-checksums") + 1 :]
+else:
+    skip_checksums = []
 
 reader = easyocr.Reader(["en"])
 for filename in os.listdir("/images"):
@@ -19,9 +22,9 @@ for filename in os.listdir("/images"):
 
     # Skip images we've already processed.
     with open(filepath, "rb") as f:
-        fileid = hashlib.md5(f.read(), usedforsecurity=False).hexdigest()
-    if fileid in meta["processed"]:
+        file_checksum = hashlib.md5(f.read(), usedforsecurity=False).hexdigest()
+    if file_checksum in skip_checksums:
         continue
 
     result = reader.readtext(filepath, detail=0)
-    print(json.dumps({"id": fileid, "result": result}))
+    print(json.dumps({"checksum": file_checksum, "result": result}))

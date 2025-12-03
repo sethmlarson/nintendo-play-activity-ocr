@@ -4,6 +4,34 @@ import subprocess
 import sqlite3
 from pathlib import Path
 
+db_schemas = [
+    """
+CREATE TABLE IF NOT EXISTS sessions (
+  id INTEGER PRIMARY KEY,
+  game_system STRING,
+  game_name STRING,
+  date STRING,
+  duration INTEGER
+);
+""",
+    """
+CREATE TABLE IF NOT EXISTS checksums (
+  value STRING PRIMARY KEY
+);
+""",
+]
+db = sqlite3.connect("nintendo-play-activity.sqlite")
+for schema in db_schemas:
+    db.execute(schema)
+db.commit()
+
+skip_checksums = [
+    checksum
+    for (checksum,) in db.execute(
+        "SELECT value FROM checksums GROUP BY value;"
+    ).fetchall()
+]
+
 curdir = Path(__file__).absolute().parent
 proc = subprocess.run(
     [
@@ -16,6 +44,8 @@ proc = subprocess.run(
         "-v",
         f"{curdir / 'images'}:/images",
         "nintendo-play-activity-ocr",
+        "--skip-checksums",
+        *skip_checksums,
     ],
     stdout=subprocess.PIPE,
     stderr=subprocess.PIPE,
@@ -53,11 +83,12 @@ games = {
     "Animal Crossing: New Horizons": None,
 }
 
-processed = set()
+processed_checksums = set()
 play_time_durations: dict[tuple[int, int, int, str], int] = {}
 for line in results:
     result = line["result"]
-    processed.add(line["id"])
+    checksum = line["checksum"]
+    processed_checksums.add(checksum)
 
     # Split the text into chunks to identify
     # the game name and play times and dates.
@@ -95,28 +126,11 @@ for line in results:
             seconds = (int(hours or 0) * 60 + int(minutes or 0)) * 60
         play_time_durations[(year, month, day, game_name)] = seconds
 
-db_schema = """
-CREATE TABLE IF NOT EXISTS sessions (
-  id INTEGER PRIMARY KEY,
-  game_system STRING,
-  game_name STRING,
-  date STRING,
-  duration INTEGER
-);
-"""
-db = sqlite3.connect("nintendo-play-activity.sqlite")
-db.execute(db_schema)
-db.commit()
-
 for (year, month, day, game_name), duration in play_time_durations.items():
     db.execute(
         "INSERT INTO sessions (game_system, game_name, date, duration) VALUES (?, ?, ?, ?)",
         ("Switch", game_name, f"{year}-{month:0>2}-{day:0>2}", duration),
     )
+for checksum in processed_checksums:
+    db.execute("INSERT INTO checksums (value) VALUES (?);", (checksum,))
 db.commit()
-
-# Update the list of processed files.
-meta_filepath = curdir / "images/meta.json"
-meta = json.loads(meta_filepath.read_text())
-meta["processed"] = sorted(set(meta["processed"]) | processed)
-meta_filepath.write_text(json.dumps(meta))
