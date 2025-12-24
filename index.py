@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   id INTEGER PRIMARY KEY,
   game_system STRING,
   game_name STRING,
+  game_region STRING,
   date STRING,
   duration INTEGER
 );
@@ -128,8 +129,8 @@ for line in results:
 
 for (year, month, day, game_name), duration in play_time_durations.items():
     db.execute(
-        "INSERT INTO sessions (game_system, game_name, date, duration) VALUES (?, ?, ?, ?)",
-        ("Switch", game_name, f"{year}-{month:0>2}-{day:0>2}", duration),
+        "INSERT INTO sessions (game_system, game_name, game_region, date, duration) VALUES (?, ?, ?, ?, ?)",
+        ("Switch", game_name, "US", f"{year}-{month:0>2}-{day:0>2}", duration),
     )
 for checksum in processed_checksums:
     db.execute("INSERT INTO checksums (value) VALUES (?);", (checksum,))
