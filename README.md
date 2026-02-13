@@ -6,6 +6,9 @@ new “Nintendo Store” mobile app. For an unknown reason, this app provides
 uniquely fine-grained data about “Play Activity” including historical
 dates and durations for games associated with a Nintendo account.
 
+Note that all “Nintendo Classics” applications are counted as
+a system, not a game, and game mapping needs to be done manually.
+
 How to build the container and run the script:
 
 ```shell

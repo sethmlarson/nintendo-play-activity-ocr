@@ -20,6 +20,15 @@ CREATE TABLE IF NOT EXISTS checksums (
   value STRING PRIMARY KEY
 );
 """,
+    """
+CREATE UNIQUE INDEX IF NOT EXISTS sessions_game_per_day ON sessions (
+    game_system,
+    game_name,
+    game_region,
+    date,
+    duration
+);
+""",
 ]
 db = sqlite3.connect("nintendo-play-activity.sqlite")
 for schema in db_schemas:
@@ -82,6 +91,11 @@ games = {
     "Pikmin 4": None,
     "Overcooked! 2": None,
     "Animal Crossing: New Horizons": None,
+    "The Legend of Zelda: Link's": "The Legend of Zelda: Link's Awakening",
+    "Nintendo Classics": None,
+}
+nintendo_classics_dates = {
+    "The Legend of Zelda: Link's Awakening": {"2026-01-01", "2026-01-02", "2026-01-03"}
 }
 
 processed_checksums = set()
@@ -128,10 +142,28 @@ for line in results:
         play_time_durations[(year, month, day, game_name)] = seconds
 
 for (year, month, day, game_name), duration in play_time_durations.items():
-    db.execute(
-        "INSERT INTO sessions (game_system, game_name, game_region, date, duration) VALUES (?, ?, ?, ?, ?)",
-        ("Switch", game_name, "US", f"{year}-{month:0>2}-{day:0>2}", duration),
-    )
+    date = f"{year}-{month:0>2}-{day:0>2}"
+    game_system = "Switch"
+
+    # Try to map 'Nintendo Classics' games to specific
+    # dates to determine the actual game played.
+    if game_name == "Nintendo Classics":
+        game_system = "Nintendo Classics"
+        for nc_game_name, dates in nintendo_classics_dates.items():
+            if date in dates:
+                game_name = nc_game_name
+                break
+        else:
+            continue
+
+    try:
+        db.execute(
+            "INSERT INTO sessions (game_system, game_name, game_region, date, duration) VALUES (?, ?, ?, ?, ?)",
+            (game_system, game_name, "US", date, duration),
+        )
+        db.commit()
+    except sqlite3.IntegrityError:
+        continue
 for checksum in processed_checksums:
     db.execute("INSERT INTO checksums (value) VALUES (?);", (checksum,))
 db.commit()
