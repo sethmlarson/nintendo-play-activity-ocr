@@ -1,3 +1,4 @@
+import csv
 import json
 import re
 import subprocess
@@ -79,7 +80,9 @@ games = {
     "Mario Kart 8 Deluxe": None,
     "Super Mario Party": None,
     "Mario Party Superstars": None,
+    "Partk Superstars": "Mario Party Superstars",
     "Super Mario Odyssey": None,
+    "Odyssey": "Super Mario Odyssey",
     "Super Mario RPG": None,
     "Paper Mario: The Thousand": "Paper Mario: The Thousand-Year Door",
     "Wonder": "Super Mario Bros. Wonder",
@@ -93,6 +96,10 @@ games = {
     "Animal Crossing: New Horizons": None,
     "The Legend of Zelda: Link's": "The Legend of Zelda: Link's Awakening",
     "Nintendo Classics": None,
+    "Hollower": "Mina the Hollower",
+    "Super Mario 3D World": "Super Mario 3D World + Bowser's Fury",
+    "Big Walk": None,
+    "Sonic Mania": None,
 }
 nintendo_classics_dates = {
     "The Legend of Zelda: Link's Awakening": {"2026-01-01", "2026-01-02", "2026-01-03"}
@@ -167,3 +174,12 @@ for (year, month, day, game_name), duration in play_time_durations.items():
 for checksum in processed_checksums:
     db.execute("INSERT INTO checksums (value) VALUES (?);", (checksum,))
 db.commit()
+
+with open("nintendo-play-activity.csv", "w") as f, csv.writer(f) as c:
+    f.truncate()
+    for row in db.execute("""
+            SELECT date, game_system, game_name, game_region, duration
+            FROM sessions
+            ORDER BY date DESC;
+        """).fetchall():
+        c.writerow(row)
