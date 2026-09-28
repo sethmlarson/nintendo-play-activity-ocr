@@ -16,7 +16,7 @@ else:
 
 reader = easyocr.Reader(["en"])
 for filename in os.listdir("/images"):
-    if filename == "meta.json":
+    if filename in ("meta.json", ".gitkeep"):
         continue
     filepath = os.path.join("/images", filename)
 

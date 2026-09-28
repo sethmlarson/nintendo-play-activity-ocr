@@ -100,9 +100,7 @@ games = {
     "Super Mario 3D World": "Super Mario 3D World + Bowser's Fury",
     "Big Walk": None,
     "Sonic Mania": None,
-}
-nintendo_classics_dates = {
-    "The Legend of Zelda: Link's Awakening": {"2026-01-01", "2026-01-02", "2026-01-03"}
+    "Origami": "Paper Mario: The Origami King",
 }
 
 processed_checksums = set()
@@ -151,18 +149,6 @@ for line in results:
 for (year, month, day, game_name), duration in play_time_durations.items():
     date = f"{year}-{month:0>2}-{day:0>2}"
     game_system = "Switch"
-
-    # Try to map 'Nintendo Classics' games to specific
-    # dates to determine the actual game played.
-    if game_name == "Nintendo Classics":
-        game_system = "Nintendo Classics"
-        for nc_game_name, dates in nintendo_classics_dates.items():
-            if date in dates:
-                game_name = nc_game_name
-                break
-        else:
-            continue
-
     try:
         db.execute(
             "INSERT INTO sessions (game_system, game_name, game_region, date, duration) VALUES (?, ?, ?, ?, ?)",
@@ -175,8 +161,9 @@ for checksum in processed_checksums:
     db.execute("INSERT INTO checksums (value) VALUES (?);", (checksum,))
 db.commit()
 
-with open("nintendo-play-activity.csv", "w") as f, csv.writer(f) as c:
+with open("nintendo-play-activity.csv", "w") as f:
     f.truncate()
+    c = csv.writer(f)
     for row in db.execute("""
             SELECT date, game_system, game_name, game_region, duration
             FROM sessions
