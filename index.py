@@ -101,6 +101,7 @@ games = {
     "Big Walk": None,
     "Sonic Mania": None,
     "Origami": "Paper Mario: The Origami King",
+    "Ocarina": "The Legend of Zelda: Ocarina of Time",
 }
 
 processed_checksums = set()
